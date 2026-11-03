@@ -149,9 +149,10 @@ function renderResults(result) {
   const { player, planets, targets, datasets, rows } = result;
   $('results-title').textContent = player.name;
   $('results-description').textContent = `${state.source.name} · планет: ${planets.length} · вселенных для сравнения: ${targets.length} · своя исключена`;
-  const totals = summarize(rows.flatMap(r => r.cells));
+  const totals = { free: 0, 'likely-free': 0, 'likely-occupied': 0, occupied: 0 };
+  for (const row of rows) totals[aggregateStatus(row.summary).key]++;
   $('metrics').replaceChildren();
-  for (const [number, text] of [[planets.length, 'координат'], [totals.free, 'свободных позиций'], [totals.occupied, 'занятых позиций'], [rows.filter(r => r.summary.free === targets.length).length, 'координат свободны везде']]) {
+  for (const [number, text] of [[planets.length, 'Всего координат'], [totals.free, 'Свободны'], [totals['likely-free'], 'Вероятно свободны'], [totals['likely-occupied'], 'Вероятно заняты'], [totals.occupied, 'Заняты']]) {
     const metric = el('div', undefined, 'metric'); metric.append(el('strong', String(number)), el('span', text)); $('metrics').append(metric);
   }
   const header = el('tr'); header.append(el('th', 'Координаты', 'coord'), el('th', 'Итого', 'summary'));
