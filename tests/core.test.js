@@ -1,7 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
-import { classifyPlayer, lookupCoordinate, summarize, findPlanets, coordinateOrder, csvCell } from '../site/core.js';
+import { classifyPlayer, lookupCoordinate, summarize, aggregateStatus, findPlanets, coordinateOrder, csvCell } from '../site/core.js';
+
+test('aggregate status prioritizes active players, then vacation, then inactivity', () => {
+  const base = summarize([]);
+  assert.equal(aggregateStatus({ ...base, free: 16 }).label, 'Свободен');
+  assert.equal(aggregateStatus({ ...base, occupied: 2, inactive: 2 }).label, 'Вероятно свободен');
+  assert.equal(aggregateStatus({ ...base, occupied: 3, vacation: 1, inactive: 2 }).label, 'Вероятно занято');
+  assert.equal(aggregateStatus({ ...base, occupied: 4, active: 1, vacation: 1, inactive: 2 }).label, 'Занято');
+  assert.equal(aggregateStatus({ ...base, unknown: 1, inactive: 2 }).label, 'Вероятно занято');
+  assert.equal(aggregateStatus({ ...base, unavailable: 1 }).label, 'Вероятно занято');
+  assert.equal(aggregateStatus(summarize([{ kind: 'occupied', ...classifyPlayer({ status: 'vI' }) }])).label, 'Вероятно занято');
+});
 
 test('vacation and inactivity are mutually exclusive, with combined labels preserved', () => {
   assert.equal(classifyPlayer({ status: 'vI' }).group, 'vacation');

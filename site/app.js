@@ -1,4 +1,4 @@
-import { classifyPlayer, lookupCoordinate, summarize, findPlanets, csvCell } from './core.js';
+import { classifyPlayer, lookupCoordinate, summarize, aggregateStatus, findPlanets, csvCell } from './core.js?v=20261103-summary';
 
 const $ = id => document.getElementById(id);
 const state = { manifest: null, source: null, sourceNumber: 182, playerId: null,
@@ -128,11 +128,12 @@ function showOptions() {
 
 function renderSummary(summary) {
   const td = el('td', undefined, 'summary');
-  if (!summary.occupied && !summary.unavailable) {
-    td.append(el('span', summary.outside ? (summary.free ? 'Свободно в доступных' : 'Вне выбранных вселенных') : 'Пусто по API', 'summary-free'));
-  } else if (!summary.occupied) td.append(el('span', 'Нет подтверждённой занятости', 'summary-total'));
-  else {
-    td.append(el('span', `Занято: ${summary.occupied}`, 'summary-total'));
+  const status = aggregateStatus(summary);
+  td.append(el('span', status.label, `summary-total aggregate-${status.key}`));
+  if (summary.unknown || summary.other || summary.unavailable) {
+    td.title = 'Есть неизвестные статусы, особые отметки или недоступные снимки. Свободность не подтверждена.';
+  }
+  if (summary.occupied) {
     const counts = el('div', undefined, 'summary-counts');
     [['active', 'Активных'], ['inactive', 'Неактивных'], ['vacation', 'РО']].forEach(([key, label]) => counts.append(el('span', `${label}: ${summary[key]}`)));
     if (summary.unknown) counts.append(el('span', `Неизвестно: ${summary.unknown}`));
@@ -153,7 +154,7 @@ function renderResults(result) {
   for (const [number, text] of [[planets.length, 'координат'], [totals.free, 'свободных позиций'], [totals.occupied, 'занятых позиций'], [rows.filter(r => r.summary.free === targets.length).length, 'координат свободны везде']]) {
     const metric = el('div', undefined, 'metric'); metric.append(el('strong', String(number)), el('span', text)); $('metrics').append(metric);
   }
-  const header = el('tr'); header.append(el('th', 'Координаты', 'coord'), el('th', 'Итого без своей', 'summary'));
+  const header = el('tr'); header.append(el('th', 'Координаты', 'coord'), el('th', 'Итого', 'summary'));
   targets.forEach((universe, i) => {
     const th = el('th', universe.name, 'universe-col');
     th.append(el('small', datasets[i] ? `Карта ${date(datasets[i].timestamps.universe).split(',')[0]}` : 'Снимок недоступен'));

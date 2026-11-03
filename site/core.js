@@ -43,6 +43,17 @@ export function summarize(cells) {
   return summary;
 }
 
+export function aggregateStatus(summary) {
+  if (summary.active > 0) return { key: 'occupied', label: 'Занято' };
+  if (summary.vacation > 0) return { key: 'likely-occupied', label: 'Вероятно занято' };
+  // Missing statuses or snapshots must not imply a position is free.
+  if (summary.unknown > 0 || summary.other > 0 || summary.unavailable > 0) {
+    return { key: 'likely-occupied', label: 'Вероятно занято' };
+  }
+  if (summary.inactive > 0) return { key: 'likely-free', label: 'Вероятно свободен' };
+  return { key: 'free', label: 'Свободен' };
+}
+
 export function findPlanets(snapshot, playerId) {
   return Object.entries(snapshot.planets).filter(([, p]) => p.player === String(playerId))
     .sort(([a], [b]) => coordinateOrder(a, b));
