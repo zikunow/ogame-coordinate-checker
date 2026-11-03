@@ -109,7 +109,8 @@ def main():
     parser.add_argument('--lobby-file', type=Path)
     args = parser.parse_args()
     raw = args.lobby_file.read_bytes() if args.lobby_file else fetch(LOBBY)
-    servers = sorted((s for s in json.loads(raw) if s['language'] == 'ru' and not s.get('serverClosed')),
+    servers = sorted((s for s in json.loads(raw) if s['language'] == 'ru'
+                      and 103 <= int(s['number']) <= 264 and not s.get('serverClosed')),
                      key=lambda s: int(s['number']))
     if not servers or len({s['number'] for s in servers}) != len(servers):
         raise ValueError('Invalid RU server list')
@@ -119,6 +120,10 @@ def main():
         raise RuntimeError('No fresh server snapshots; keeping the previous manifest')
     write_json(args.output / 'manifest.json', {'schemaVersion': 1, 'generatedAt': now(),
                'community': 'ru', 'lobbyApi': LOBBY, 'universes': entries})
+    included_files = {f"ru-{entry['number']}.json" for entry in entries}
+    for path in args.output.glob('ru-*.json'):
+        if path.name not in included_files:
+            path.unlink()
 
 
 if __name__ == '__main__':

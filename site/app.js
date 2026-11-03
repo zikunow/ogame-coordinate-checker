@@ -266,6 +266,8 @@ async function init() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const manifest = await response.json();
     if (manifest.schemaVersion !== 1 || !manifest.universes?.length) throw new Error('Некорректный список вселенных');
+    manifest.universes = manifest.universes.filter(u => u.number >= 103 && u.number <= 264);
+    if (!manifest.universes.length) throw new Error('Нет вселенных в диапазоне Capella–Imai');
     state.manifest = manifest;
     const params = new URLSearchParams(location.search);
     const desired = Number(params.get('universe') || 182);
