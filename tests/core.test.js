@@ -26,6 +26,23 @@ test('vacation and inactivity are mutually exclusive, with combined labels prese
   assert.equal(classifyPlayer({ status: 'z' }).group, 'other');
 });
 
+test('inactive-aware mode distinguishes inactive vacation from ordinary vacation', () => {
+  const summary = (...codes) => summarize(codes.map(status => ({ kind: 'occupied', ...classifyPlayer({ status }) })));
+  const status = (...codes) => aggregateStatus(summary(...codes), 'inactive').key;
+  assert.equal(status(), 'free');
+  assert.equal(status('i', 'I'), 'free');
+  assert.equal(status('vi', 'I'), 'likely-free');
+  assert.equal(status('vI', 'i'), 'likely-free');
+  assert.equal(status('v', 'vI'), 'likely-occupied');
+  assert.equal(status('', 'vI', 'I'), 'likely-occupied');
+  assert.equal(aggregateStatus(summary('vI')).key, 'likely-occupied');
+  assert.equal(aggregateStatus(summary('')).key, 'occupied');
+  assert.equal(aggregateStatus(summarize([{ kind: 'unavailable' }]), 'inactive').key, 'likely-occupied');
+  assert.equal(aggregateStatus(summarize([{ kind: 'occupied', ...classifyPlayer(null) }]), 'inactive').key, 'likely-occupied');
+  assert.equal(summary('vi', 'v', 'vI').vacationInactive, 2);
+  assert.equal(summary('vi', 'v', 'vI').vacationActive, 1);
+});
+
 test('missing datasets, missing players and out-of-range coordinates never become free slots', () => {
   const snapshot = { galaxies: 4, systems: 499, players: {}, planets: { '1:73:8': { id: '7', player: '9', name: 'Colonie' } } };
   assert.equal(lookupCoordinate(null, '1:73:8').kind, 'unavailable');

@@ -7,8 +7,8 @@
   <meta name="description" content="Проверьте, могут ли занять ваши координаты после слияния OGame RU. Сравните позиции и оцените, стоит ли переезжать первым или подождать ради бесплатной релокации.">
   <title>Координаты — OGame RU</title>
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./style.css?v=20261103-ranking">
-  <script type="module" src="./app.js?v=20261103-coordinate-totals"></script>
+  <link rel="stylesheet" href="./style.css?v=20261103-modes">
+  <script type="module" src="./app.js?v=20261103-modes"></script>
 </head>
 <body>
   <div class="shell">
@@ -35,6 +35,10 @@
       <section id="results" class="results" hidden aria-labelledby="results-title">
         <div class="results-heading"><div><div class="eyebrow">РЕЗУЛЬТАТ ПРОВЕРКИ</div><h2 id="results-title"></h2><p id="results-description"></p></div><div class="result-actions"><button type="button" id="share">Скопировать ссылку</button><button type="button" id="export">Скачать CSV</button></div></div>
         <div id="metrics" class="metrics"></div>
+        <div class="analysis-toolbar">
+          <label class="mode-switch-label"><span>Стандартный</span><input id="inactive-mode" type="checkbox" role="switch" aria-label="Считать ишки свободными" aria-describedby="mode-help"><span class="mode-switch-track" aria-hidden="true"></span><span>С учётом ишек</span></label>
+          <p id="mode-help" class="micro"></p>
+        </div>
         <div class="legend"><span><i class="dot active"></i>Активный*</span><span><i class="dot inactive"></i>Неактивный</span><span><i class="dot vacation"></i>РО</span><span><i class="dot unknown"></i>Неизвестно</span><span class="scroll-hint">Таблицу можно прокручивать вправо →</span></div>
         <div class="table-scroll" tabindex="0" role="region" aria-label="Координаты по вселенным. Горизонтальная прокрутка"><table id="comparison"><caption class="sr-only">Занятость координат планет по выбранным вселенным</caption><thead></thead><tbody></tbody></table></div>
         <p class="micro footnote">* «Активный» — без особых отметок API, это не означает «онлайн». РО имеет приоритет над неактивностью: группы не пересекаются. Числа показывают занятые позиции во вселенных, а не уникальных людей.</p>

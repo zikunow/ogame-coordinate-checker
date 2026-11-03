@@ -35,15 +35,25 @@ export function lookupCoordinate(snapshot, coords) {
 }
 
 export function summarize(cells) {
-  const summary = { occupied: 0, free: 0, active: 0, inactive: 0, vacation: 0, unknown: 0, other: 0, unavailable: 0, outside: 0 };
+  const summary = { occupied: 0, free: 0, active: 0, inactive: 0, vacation: 0, vacationInactive: 0, vacationActive: 0, unknown: 0, other: 0, unavailable: 0, outside: 0 };
   for (const cell of cells) {
-    if (cell.kind === 'occupied') { summary.occupied++; summary[cell.group]++; }
+    if (cell.kind === 'occupied') {
+      summary.occupied++; summary[cell.group]++;
+      if (cell.group === 'vacation') summary[/[iI]/.test(cell.code || '') ? 'vacationInactive' : 'vacationActive']++;
+    }
     else summary[cell.kind]++;
   }
   return summary;
 }
 
-export function aggregateStatus(summary) {
+export function aggregateStatus(summary, mode = 'standard') {
+  if (mode === 'inactive') {
+    if (summary.active > 0 || summary.vacationActive > 0 || summary.unknown > 0 || summary.other > 0 || summary.unavailable > 0) {
+      return { key: 'likely-occupied', label: 'Вероятно занято' };
+    }
+    if (summary.vacationInactive > 0) return { key: 'likely-free', label: 'Вероятно свободен' };
+    return { key: 'free', label: 'Свободен' };
+  }
   if (summary.active > 0) return { key: 'occupied', label: 'Занято' };
   if (summary.vacation > 0) return { key: 'likely-occupied', label: 'Вероятно занято' };
   // Missing statuses or snapshots must not imply a position is free.

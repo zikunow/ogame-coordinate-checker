@@ -1,7 +1,7 @@
-import { classifyPlayer, lookupCoordinate, summarize, aggregateStatus, findPlanets, csvCell } from './core.js?v=20261103-ranking';
+import { classifyPlayer, lookupCoordinate, summarize, aggregateStatus, findPlanets, csvCell } from './core.js?v=20261103-modes';
 
 const $ = id => document.getElementById(id);
-const state = { manifest: null, source: null, sourceNumber: 182, playerId: null,
+const state = { manifest: null, source: null, sourceNumber: 182, playerId: null, mode: 'standard',
   targets: new Set(), cache: new Map(), players: [], matches: [], highlight: -1,
   sourceRequest: 0, comparisonRequest: 0, result: null, busy: false };
 const date = timestamp => new Intl.DateTimeFormat('ru-RU', {
@@ -128,7 +128,7 @@ function showOptions() {
 
 function renderSummary(summary) {
   const td = el('td', undefined, 'summary');
-  const status = aggregateStatus(summary);
+  const status = aggregateStatus(summary, state.mode);
   td.append(el('span', status.label, `summary-total aggregate-${status.key}`));
   if (summary.unknown || summary.other || summary.unavailable) {
     td.title = 'Есть неизвестные статусы, особые отметки или недоступные снимки. Свободность не подтверждена.';
@@ -150,7 +150,7 @@ function renderResults(result) {
   $('results-title').textContent = player.name;
   $('results-description').textContent = `${state.source.name} · планет: ${planets.length} · вселенных для сравнения: ${targets.length} · своя исключена`;
   const totals = { free: 0, 'likely-free': 0, 'likely-occupied': 0, occupied: 0 };
-  for (const row of rows) totals[aggregateStatus(row.summary).key]++;
+  for (const row of rows) totals[aggregateStatus(row.summary, state.mode).key]++;
   $('metrics').replaceChildren();
   for (const [number, text] of [[planets.length, 'Всего координат'], [totals.free, 'Свободны'], [totals['likely-free'], 'Вероятно свободны'], [totals['likely-occupied'], 'Вероятно заняты'], [totals.occupied, 'Заняты']]) {
     const metric = el('div', undefined, 'metric'); metric.append(el('strong', String(number)), el('span', text)); $('metrics').append(metric);
@@ -196,12 +196,17 @@ function renderResults(result) {
     $('freshness').append(item);
   }
   $('results').hidden = false; $('empty-state').hidden = true;
+  $('inactive-mode').checked = state.mode === 'inactive';
+  $('mode-help').textContent = state.mode === 'inactive'
+    ? 'Пусто или только ишки → свободен. Ишки в РО → вероятно свободен. РО без неактивности или активные → вероятно занято.'
+    : 'Активные → занято. РО → вероятно занято. Только ишки → вероятно свободен. Пусто → свободен.';
 }
 
 function shareUrl() {
   const url = new URL(location.href); url.search = ''; url.hash = '';
   url.searchParams.set('universe', state.sourceNumber); url.searchParams.set('player', state.playerId);
   url.searchParams.set('targets', selectedTargets().map(t => t.number).join(','));
+  if (state.mode === 'inactive') url.searchParams.set('mode', 'inactive');
   return url;
 }
 
@@ -229,6 +234,13 @@ async function compare() {
 }
 
 $('universe').addEventListener('change', () => selectSource(Number($('universe').value)));
+$('inactive-mode').addEventListener('change', () => {
+  state.mode = $('inactive-mode').checked ? 'inactive' : 'standard';
+  if (state.result) {
+    renderResults(state.result);
+    history.replaceState(null, '', shareUrl());
+  }
+});
 $('player-search').addEventListener('input', () => { state.playerId = null; clearResult(); updateButton(); $('selected-player').textContent = 'Выбери игрока из подсказок.'; showOptions(); });
 $('player-search').addEventListener('focus', showOptions);
 $('player-search').addEventListener('blur', closeOptions);
@@ -258,13 +270,14 @@ $('share').addEventListener('click', async () => {
 });
 $('export').addEventListener('click', () => {
   if (!state.result) return;
-  const data = [['Координаты', 'Вселенная', 'Занятость', 'Ник', 'Статус', 'Код API', 'ID игрока', 'Карта API UTC', 'Статусы API UTC', 'Место по очкам', 'Очки', 'Рейтинг API UTC']];
+  const data = [['Координаты', 'Вселенная', 'Занятость', 'Ник', 'Статус', 'Код API', 'ID игрока', 'Карта API UTC', 'Статусы API UTC', 'Место по очкам', 'Очки', 'Рейтинг API UTC', 'Итого', 'Режим оценки']];
   state.result.rows.forEach(row => row.cells.forEach((cell, i) => {
     const snap = state.result.datasets[i];
     data.push([row.coords, state.result.targets[i].name, cell.kind === 'occupied' ? 'Занято' : cell.label,
       cell.name || '', cell.kind === 'occupied' ? cell.label : '', cell.code || '', cell.playerId || '',
       snap ? new Date(snap.timestamps.universe * 1000).toISOString() : '', snap ? new Date(snap.timestamps.players * 1000).toISOString() : '',
-      cell.rank || '', cell.score ?? '', snap?.timestamps.highscore ? new Date(snap.timestamps.highscore * 1000).toISOString() : '']);
+      cell.rank || '', cell.score ?? '', snap?.timestamps.highscore ? new Date(snap.timestamps.highscore * 1000).toISOString() : '',
+      aggregateStatus(row.summary, state.mode).label, state.mode === 'inactive' ? 'С учётом ишек' : 'Стандартный']);
   }));
   const blob = new Blob(['\uFEFF' + data.map(row => row.map(csvCell).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob), link = el('a'); link.href = url; link.download = `ogame-ru-${state.sourceNumber}-${state.playerId}.csv`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -280,6 +293,7 @@ async function init() {
     if (!manifest.universes.length) throw new Error('Нет вселенных в диапазоне Capella–Imai');
     state.manifest = manifest;
     const params = new URLSearchParams(location.search);
+    state.mode = params.get('mode') === 'inactive' ? 'inactive' : 'standard';
     const desired = Number(params.get('universe') || 182);
     state.sourceNumber = entries().some(e => e.number === desired) ? desired : entries().find(e => e.state !== 'unavailable').number;
     $('universe').replaceChildren(...entries().map(u => { const option = el('option', `${u.name} · RU ${u.number}${u.state === 'unavailable' ? ' · нет данных' : ''}`); option.value = u.number; return option; }));
