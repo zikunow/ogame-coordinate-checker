@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0a101c">
+  <meta name="description" content="Найдите свои планеты OGame RU и проверьте занятость тех же координат в других вселенных. Ники, статусы, режим отпуска и даты API.">
+  <title>Координаты — OGame RU</title>
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Координаты — главная"><img src="./icon.svg" width="34" height="34" alt=""><span>КООРДИНАТЫ <small>OGAME / RU</small></span></a>
+      <a class="source-link" href="https://github.com/zikunow/ogame-coordinate-checker" target="_blank" rel="noopener noreferrer">Открытый код <span aria-hidden="true">↗</span></a>
+    </header>
+    <main>
+      <section class="intro">
+        <div class="eyebrow"><span class="signal"></span> МЕЖДУ ВСЕЛЕННЫМИ</div>
+        <h1>Твои планеты.<br><span>Те же координаты.</span></h1>
+        <p>Найди себя и проверь, кто занимает твои позиции в других вселенных.</p>
+      </section>
+      <section class="search-panel" aria-labelledby="search-title">
+        <h2 id="search-title" class="sr-only">Выбор игрока</h2>
+        <form id="search-form">
+          <div class="field universe-field"><label for="universe">Твоя вселенная</label><select id="universe" disabled><option>Загрузка…</option></select></div>
+          <div class="field player-field"><label for="player-search">Ник или ID игрока</label><div class="search-wrap"><input id="player-search" type="search" role="combobox" aria-autocomplete="list" aria-controls="player-options" aria-expanded="false" autocomplete="off" spellcheck="false" placeholder="Начни вводить ник…" disabled><ul id="player-options" role="listbox" hidden></ul></div></div>
+          <button id="check" type="submit" class="primary" disabled>Проверить координаты <span aria-hidden="true">↗</span></button>
+        </form>
+        <div class="selection-bar"><div id="selected-player" aria-live="polite">Выбери вселенную и найди игрока.</div><button id="example" class="text-button" type="button" disabled>Пример: Proconsul Tiger</button></div>
+        <details class="target-picker" id="target-picker"><summary>Где проверять <span id="target-count"></span></summary><div class="target-toolbar"><button type="button" data-preset="classic">Capella — Imai</button><button type="button" data-preset="all">Все RU</button><button type="button" data-preset="none">Снять все</button></div><div id="targets" class="targets"></div><p class="micro">Своя вселенная исключается автоматически. Позиции вне размеров вселенной отмечаются отдельно.</p></details>
+      </section>
+      <div id="message" class="message" role="status" aria-live="polite">Загружаем список вселенных…</div>
+      <section id="results" class="results" hidden aria-labelledby="results-title">
+        <div class="results-heading"><div><div class="eyebrow">РЕЗУЛЬТАТ ПРОВЕРКИ</div><h2 id="results-title"></h2><p id="results-description"></p></div><div class="result-actions"><button type="button" id="share">Скопировать ссылку</button><button type="button" id="export">Скачать CSV</button></div></div>
+        <div id="metrics" class="metrics"></div>
+        <div class="legend"><span><i class="dot active"></i>Активный*</span><span><i class="dot inactive"></i>Неактивный</span><span><i class="dot vacation"></i>РО</span><span><i class="dot unknown"></i>Неизвестно</span><span class="scroll-hint">Таблицу можно прокручивать вправо →</span></div>
+        <div class="table-scroll" tabindex="0" role="region" aria-label="Координаты по вселенным. Горизонтальная прокрутка"><table id="comparison"><caption class="sr-only">Занятость координат планет по выбранным вселенным</caption><thead></thead><tbody></tbody></table></div>
+        <p class="micro footnote">* «Активный» — без особых отметок API, это не означает «онлайн». РО имеет приоритет над неактивностью: группы не пересекаются. Числа показывают занятые позиции во вселенных, а не уникальных людей.</p>
+        <details class="data-notes"><summary>Свежесть данных и источники</summary><p>Карта планет обычно обновляется раз в неделю, статусы игроков — раз в сутки. «Свободно» означает отсутствие планеты в опубликованном снимке API. После снимка игрок мог переселиться или колонизировать позицию. Луны не учитываются.</p><div id="freshness"></div></details>
+      </section>
+      <section id="empty-state" class="empty-state" aria-label="Как работает проверка"><span class="orbit-mark" aria-hidden="true">◎</span><div><h2>Одна проверка вместо десятков вкладок</h2><p>Координаты слева, сводка рядом, владельцы и статусы — по вселенным. Данные загружаются заранее: вход в игру не нужен.</p></div></section>
+    </main>
+    <footer><span>Независимый инструмент сообщества. OGame — Gameforge.</span><span id="updated-at">Снимки официального API</span></footer>
+  </div>
+</body>
+</html>
