@@ -28,6 +28,17 @@ class ParserTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             updater.parse_snapshot({'number': 182, 'name': 'Dione'}, xml)
 
+    def test_total_points_ranking_joins_by_id_and_preserves_exact_score(self):
+        data = updater.parse_snapshot({'number': 182, 'name': 'Dione'}, self.xml())
+        raw = b'<highscore serverId="ru182" category="1" type="0" timestamp="4"><player id="42" position="10" score="9007199254740993"/><player id="77" position="11" score="5"/></highscore>'
+        updater.add_highscores(data, raw)
+        self.assertEqual(data['players']['42']['rank'], 10)
+        self.assertEqual(data['players']['42']['score'], '9007199254740993')
+        self.assertEqual(data['timestamps']['highscore'], 4)
+        self.assertNotIn('77', data['players'])
+        with self.assertRaises(ValueError):
+            updater.add_highscores(data, raw.replace(b'type="0"', b'type="3"'))
+
     def test_duplicate_coordinates_are_rejected(self):
         xml = self.xml()
         xml['universe'] = xml['universe'].replace(b'5:250:1', b'1:2:8')

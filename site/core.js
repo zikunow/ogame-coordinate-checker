@@ -31,7 +31,7 @@ export function lookupCoordinate(snapshot, coords) {
   if (!planet) return { kind: 'free', label: 'Свободно по API' };
   const player = snapshot.players[planet.player];
   return { kind: 'occupied', planet, playerId: planet.player,
-    name: player?.name || `Игрок #${planet.player}`, ...classifyPlayer(player) };
+    name: player?.name || `Игрок #${planet.player}`, rank: player?.rank, score: player?.score, ...classifyPlayer(player) };
 }
 
 export function summarize(cells) {

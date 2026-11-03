@@ -1,4 +1,4 @@
-import { classifyPlayer, lookupCoordinate, summarize, aggregateStatus, findPlanets, csvCell } from './core.js?v=20261103-summary';
+import { classifyPlayer, lookupCoordinate, summarize, aggregateStatus, findPlanets, csvCell } from './core.js?v=20261103-ranking';
 
 const $ = id => document.getElementById(id);
 const state = { manifest: null, source: null, sourceNumber: 182, playerId: null,
@@ -98,7 +98,7 @@ function selectPlayer(id) {
   const player = state.source?.players[id]; if (!player) return;
   state.playerId = id; $('player-search').value = player.name; closeOptions(); clearResult();
   const planets = findPlanets(state.source, id);
-  const label = $('selected-player'); label.replaceChildren(el('strong', player.name), document.createTextNode(` · ID ${id} · планет: ${planets.length} · ${classifyPlayer(player).label}`));
+  const label = $('selected-player'); label.replaceChildren(el('strong', player.name), document.createTextNode(`${player.rank ? ` · топ ${player.rank}` : ''} · ID ${id} · планет: ${planets.length} · ${classifyPlayer(player).label}`));
   updateButton();
   message(planets.length ? 'Игрок выбран. Можно проверить координаты.' : 'В снимке карты у этого игрока нет планет.', planets.length ? '' : 'warning');
 }
@@ -117,7 +117,7 @@ function showOptions() {
   $('player-options').replaceChildren();
   state.matches.forEach((p, i) => {
     const option = el('li'); option.id = `player-option-${i}`; option.setAttribute('role', 'option'); option.setAttribute('aria-selected', 'false');
-    option.append(el('span', p.name), el('small', `#${p.id} · ${classifyPlayer(p).label}`));
+    option.append(el('span', p.name), el('small', `${p.rank ? `Топ ${p.rank} · ` : ''}#${p.id} · ${classifyPlayer(p).label}`));
     option.addEventListener('mousedown', event => event.preventDefault());
     option.addEventListener('click', () => selectPlayer(p.id));
     $('player-options').append(option);
@@ -169,7 +169,14 @@ function renderResults(result) {
     row.cells.forEach(cell => {
       const td = el('td', undefined, `planet-cell ${cell.kind} ${cell.group || ''}`);
       if (cell.kind === 'occupied') {
-        td.append(el('strong', cell.name));
+        const name = el('div', undefined, 'player-name');
+        name.append(el('strong', cell.name));
+        if (cell.rank) {
+          const rank = el('span', `Топ ${cell.rank}`, 'player-rank');
+          rank.title = `Общий рейтинг по очкам: место ${cell.rank}${cell.score != null ? ` · ${new Intl.NumberFormat('ru-RU').format(BigInt(cell.score))} очков` : ''}`;
+          name.append(rank);
+        }
+        td.append(name);
         const status = el('div', undefined, 'cell-status'); status.append(el('i', undefined, `dot ${cell.group}`), el('span', cell.label)); td.append(status);
         td.title = `ID ${cell.playerId} · ${cell.planet.name}${cell.code ? ` · API: ${cell.code}` : ''}`;
       } else td.textContent = cell.label;
@@ -182,7 +189,7 @@ function renderResults(result) {
   for (const [entry, dataset] of [[sourceEntry, state.source], ...targets.map((t, i) => [t, datasets[i]])]) {
     const item = el('div', undefined, 'freshness-item');
     item.append(el('strong', entry.name + (entry.number === state.sourceNumber ? ' · своя' : '')));
-    item.append(el('span', dataset ? `Карта: ${date(dataset.timestamps.universe)} UTC · статусы: ${date(dataset.timestamps.players)} UTC` : 'Данные не загружены. Занятость неизвестна.'));
+    item.append(el('span', dataset ? `Карта: ${date(dataset.timestamps.universe)} UTC · статусы: ${date(dataset.timestamps.players)} UTC · рейтинг: ${dataset.timestamps.highscore ? `${date(dataset.timestamps.highscore)} UTC` : 'недоступен'}` : 'Данные не загружены. Занятость неизвестна.'));
     const link = el('a', 'Открыть API ↗'); link.href = `${entry.api}universe.xml`; link.target = '_blank'; link.rel = 'noopener noreferrer'; item.append(link);
     if (entry.state === 'stale') item.append(el('em', 'Последнее обновление не удалось. Показан сохранённый снимок.'));
     $('freshness').append(item);
@@ -250,12 +257,13 @@ $('share').addEventListener('click', async () => {
 });
 $('export').addEventListener('click', () => {
   if (!state.result) return;
-  const data = [['Координаты', 'Вселенная', 'Занятость', 'Ник', 'Статус', 'Код API', 'ID игрока', 'Карта API UTC', 'Статусы API UTC']];
+  const data = [['Координаты', 'Вселенная', 'Занятость', 'Ник', 'Статус', 'Код API', 'ID игрока', 'Карта API UTC', 'Статусы API UTC', 'Место по очкам', 'Очки', 'Рейтинг API UTC']];
   state.result.rows.forEach(row => row.cells.forEach((cell, i) => {
     const snap = state.result.datasets[i];
     data.push([row.coords, state.result.targets[i].name, cell.kind === 'occupied' ? 'Занято' : cell.label,
       cell.name || '', cell.kind === 'occupied' ? cell.label : '', cell.code || '', cell.playerId || '',
-      snap ? new Date(snap.timestamps.universe * 1000).toISOString() : '', snap ? new Date(snap.timestamps.players * 1000).toISOString() : '']);
+      snap ? new Date(snap.timestamps.universe * 1000).toISOString() : '', snap ? new Date(snap.timestamps.players * 1000).toISOString() : '',
+      cell.rank || '', cell.score ?? '', snap?.timestamps.highscore ? new Date(snap.timestamps.highscore * 1000).toISOString() : '']);
   }));
   const blob = new Blob(['\uFEFF' + data.map(row => row.map(csvCell).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob), link = el('a'); link.href = url; link.download = `ogame-ru-${state.sourceNumber}-${state.playerId}.csv`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);

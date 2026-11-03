@@ -73,6 +73,31 @@ def parse_snapshot(server, xml):
             'players': players, 'planets': planets}
 
 
+def add_highscores(data, raw):
+    root = ET.fromstring(raw)
+    if (root.tag != 'highscore' or root.get('serverId') != f"ru{data['number']}"
+            or root.get('category') != '1' or root.get('type') != '0'):
+        raise ValueError('Wrong highscore identity or category')
+    timestamp = int(root.get('timestamp', '0'))
+    if timestamp <= 0:
+        raise ValueError('Missing highscore timestamp')
+    rankings, positions = {}, set()
+    for player in root.findall('player'):
+        player_id = player.attrib['id']
+        rank, score = int(player.attrib['position']), player.attrib['score']
+        if rank <= 0 or not score.isdigit() or player_id in rankings or rank in positions:
+            raise ValueError('Invalid highscore record')
+        rankings[player_id] = {'rank': rank, 'score': score}
+        positions.add(rank)
+    if not rankings:
+        raise ValueError('Empty highscore snapshot')
+    for player_id, player in data['players'].items():
+        if player_id in rankings:
+            player.update(rankings[player_id])
+    data['timestamps']['highscore'] = timestamp
+    data['rankingState'] = 'ok'
+
+
 def collect(server, data_dir, cache_dir):
     number = int(server['number'])
     base = f'https://s{number}-ru.ogame.gameforge.com/api/'
@@ -85,6 +110,13 @@ def collect(server, data_dir, cache_dir):
             cached = cache_dir / f'{number}_{kind}.xml' if cache_dir else None
             xml[kind] = cached.read_bytes() if cached and cached.exists() else fetch(f'{base}{kind}.xml')
         data = parse_snapshot(server, xml)
+        try:
+            cached = cache_dir / f'{number}_highscore.xml' if cache_dir else None
+            ranking_xml = cached.read_bytes() if cached and cached.exists() else fetch(f'{base}highscore.xml?category=1&type=0')
+            add_highscores(data, ranking_xml)
+        except Exception as error:
+            print(f'ru-{number}: ranking unavailable: {type(error).__name__}: {error}', file=sys.stderr)
+            data['rankingState'] = 'unavailable'
         write_json(path, data)
         entry['lastSuccessAt'] = now()
     except Exception as error:
@@ -97,6 +129,7 @@ def collect(server, data_dir, cache_dir):
             entry.update(state='unavailable', error='API недоступен при обновлении')
             return entry
     entry.update(galaxies=data['galaxies'], systems=data['systems'], timestamps=data['timestamps'],
+                 rankingState=data.get('rankingState', 'unavailable'),
                  playerCount=len(data['players']), planetCount=len(data['planets']))
     print(f"{entry['name']}: {entry['playerCount']} players, {entry['planetCount']} planets ({entry['state']})", flush=True)
     return entry
