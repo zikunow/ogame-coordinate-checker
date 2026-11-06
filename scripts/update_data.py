@@ -143,7 +143,7 @@ def main():
     args = parser.parse_args()
     raw = args.lobby_file.read_bytes() if args.lobby_file else fetch(LOBBY)
     servers = sorted((s for s in json.loads(raw) if s['language'] == 'ru'
-                      and 103 <= int(s['number']) <= 264 and not s.get('serverClosed')),
+                      and 103 <= int(s['number']) <= 266 and not s.get('serverClosed')),
                      key=lambda s: int(s['number']))
     if not servers or len({s['number'] for s in servers}) != len(servers):
         raise ValueError('Invalid RU server list')

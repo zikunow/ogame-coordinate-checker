@@ -60,7 +60,7 @@ function renderTargets() {
 }
 function updateTargetsCount() { $('target-count').textContent = `· ${selectedTargets().length} вселенных`; }
 function preset(name) {
-  state.targets = new Set(entries().filter(u => name === 'all' || (name === 'classic' && u.number >= 103 && u.number <= 264)).map(u => u.number));
+  state.targets = new Set(entries().filter(u => name === 'all' || (name === 'classic' && u.number >= 103 && u.number <= 266)).map(u => u.number));
   clearResult(); renderTargets(); updateButton();
 }
 
@@ -289,8 +289,8 @@ async function init() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const manifest = await response.json();
     if (manifest.schemaVersion !== 1 || !manifest.universes?.length) throw new Error('Некорректный список вселенных');
-    manifest.universes = manifest.universes.filter(u => u.number >= 103 && u.number <= 264);
-    if (!manifest.universes.length) throw new Error('Нет вселенных в диапазоне Capella–Imai');
+    manifest.universes = manifest.universes.filter(u => u.number >= 103 && u.number <= 266);
+    if (!manifest.universes.length) throw new Error('Нет вселенных в диапазоне Capella–Keid');
     state.manifest = manifest;
     const params = new URLSearchParams(location.search);
     state.mode = params.get('mode') === 'inactive' ? 'inactive' : 'standard';
