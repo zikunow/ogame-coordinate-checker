@@ -50,6 +50,11 @@ def parse_snapshot(server, xml):
     if settings.findtext('name') != server['name'] and number != 1:
         raise ValueError('Lobby and API universe names differ')
     galaxies, systems = int(settings.findtext('galaxies')), int(settings.findtext('systems'))
+    fleet_speeds = {}
+    for key, tag in [('peaceful', 'speedFleetPeaceful'), ('war', 'speedFleetWar')]:
+        value = settings.findtext(tag, '').strip()
+        if value.isdecimal() and int(value) > 0:
+            fleet_speeds[key] = int(value)
     if not 1 <= galaxies <= 100 or not 1 <= systems <= 10000:
         raise ValueError('Invalid universe dimensions')
     players = {p.get('id'): {'name': p.attrib['name'], 'status': p.get('status', '')}
@@ -68,7 +73,7 @@ def parse_snapshot(server, xml):
     if not players or not planets:
         raise ValueError('Empty API snapshot')
     return {'schemaVersion': 1, 'number': number, 'name': server['name'],
-            'galaxies': galaxies, 'systems': systems,
+            'galaxies': galaxies, 'systems': systems, 'fleetSpeeds': fleet_speeds,
             'timestamps': {kind: int(root.attrib['timestamp']) for kind, root in roots.items()},
             'players': players, 'planets': planets}
 
@@ -129,6 +134,7 @@ def collect(server, data_dir, cache_dir):
             entry.update(state='unavailable', error='API недоступен при обновлении')
             return entry
     entry.update(galaxies=data['galaxies'], systems=data['systems'], timestamps=data['timestamps'],
+                 fleetSpeeds=data.get('fleetSpeeds', {}),
                  rankingState=data.get('rankingState', 'unavailable'),
                  playerCount=len(data['players']), planetCount=len(data['planets']))
     print(f"{entry['name']}: {entry['playerCount']} players, {entry['planetCount']} planets ({entry['state']})", flush=True)

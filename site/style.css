@@ -7,3 +7,16 @@
 .analysis-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;margin:0 0 16px}.mode-switch-label{display:flex;align-items:center;gap:10px;font-size:12px;color:#c4d0df;cursor:pointer;position:relative}.mode-switch-label input{position:absolute;opacity:0;width:1px;min-height:1px;height:1px;padding:0}.mode-switch-track{position:relative;width:40px;height:22px;flex-shrink:0;border-radius:20px;background:#39485b;border:1px solid #62718a}.mode-switch-track:after{content:"";position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:#eaf0f9;transition:transform .15s}.mode-switch-label input:checked+.mode-switch-track{background:#286755;border-color:var(--accent)}.mode-switch-label input:checked+.mode-switch-track:after{transform:translateX(18px);background:var(--accent)}.mode-switch-label input:focus-visible+.mode-switch-track{outline:2px solid var(--accent);outline-offset:3px}.analysis-toolbar .micro{margin:0;max-width:790px}
 @media(min-width:1200px){.table-scroll table{table-layout:fixed;width:100%;min-width:0}th.coord,td.coord{width:88px;min-width:88px;max-width:88px;padding:8px}th.summary,td.summary{left:88px;width:145px;min-width:145px;max-width:145px;padding:8px}.universe-col,.planet-cell{min-width:0;max-width:none;width:auto;padding:8px 5px;overflow-wrap:anywhere}thead .universe-col{font-size:10px}thead .universe-col small{display:none}.planet-cell strong{font-size:10px;max-width:none;overflow-wrap:anywhere;line-height:1.4}.player-name{gap:3px}.player-name strong{width:100%}.player-rank{font-size:8px;padding:0 3px}.cell-status{font-size:9px;gap:4px;line-height:1.35}.cell-status .dot{width:5px;height:5px}.summary-counts{gap:3px 7px}.legend>.scroll-hint{display:none}}
 @media(min-width:601px) and (max-width:1199px){.universe-col,.planet-cell{min-width:135px;max-width:190px;padding:9px}.planet-cell strong{max-width:165px}}
+
+.fleet-speeds {
+  display: grid;
+  gap: 1px;
+  margin-top: 4px;
+  color: #b8c8d9;
+  font-size: 9px;
+  font-weight: 400;
+  line-height: 1.25;
+}
+.fleet-speeds > span {
+  white-space: nowrap;
+}

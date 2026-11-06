@@ -158,6 +158,21 @@ function renderResults(result) {
   const header = el('tr'); header.append(el('th', 'Координаты', 'coord'), el('th', 'Итого', 'summary'));
   targets.forEach((universe, i) => {
     const th = el('th', universe.name, 'universe-col');
+    const speeds = universe.fleetSpeeds;
+    if (speeds?.peaceful || speeds?.war) {
+      const details = el('span', undefined, 'fleet-speeds');
+      for (const [key, label, title] of [
+        ['peaceful', 'Мирн.', 'Скорость мирного флота'],
+        ['war', 'Боев.', 'Скорость боевого флота'],
+      ]) {
+        if (!speeds[key]) continue;
+        const line = el('span', `${label} ×${speeds[key]}`);
+        line.title = `${title} ×${speeds[key]}`;
+        line.setAttribute('aria-label', line.title);
+        details.append(line);
+      }
+      th.append(details);
+    }
     th.append(el('small', datasets[i] ? `Карта ${date(datasets[i].timestamps.universe).split(',')[0]}` : 'Снимок недоступен'));
     th.title = datasets[i] ? `Карта: ${date(datasets[i].timestamps.universe)} UTC\nСтатусы: ${date(datasets[i].timestamps.players)} UTC` : 'Ошибка загрузки данных';
     header.append(th);
